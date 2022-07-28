@@ -1,8 +1,11 @@
-from torch import nn, sigmoid, tanh
+from typing import *
+
+from torch import Tensor, nn, sigmoid, tanh
+from typer import Option
 
 
 class LSTMCell(nn.Module):
-    def __init__(self, input_size, hidden_size, bias=True) -> None:
+    def __init__(self, input_size: int, hidden_size: int, bias: bool = True) -> None:
         super().__init__()
         self.linear_hi = nn.Linear(input_size, hidden_size, bias)
         self.linear_hh = nn.Linear(hidden_size, hidden_size, bias)
@@ -13,7 +16,7 @@ class LSTMCell(nn.Module):
         self.linear_fi = nn.Linear(input_size, hidden_size, bias)
         self.linear_fh = nn.Linear(hidden_size, hidden_size, bias)
 
-    def forward(self, inputs, hidden_state):
+    def forward(self, inputs: Tensor, hidden_state: Tuple[Tensor, Tensor]):
         h_t, c_t = hidden_state
         h_t = self.linear_hi(inputs) + self.linear_hh(h_t)
         i_t = sigmoid(self.linear_ii(inputs) + self.linear_ih(h_t))
@@ -38,17 +41,25 @@ class mLSTMCell(LSTMCell):
 
 class mLSTM(nn.Module):
     def __init__(
-        self, input_size, hidden_size, num_layers=1, bias=True, batch_first=False
+        self,
+        input_size: int,
+        hidden_size: int,
+        num_layers: int = 1,
+        bias: bool = True,
+        batch_first: bool = False,
     ) -> None:
         super().__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.batch_first = batch_first
-        self.layers = [mLSTMCell(input_size, hidden_size, bias)]
+        layers = [mLSTMCell(input_size, hidden_size, bias)]
         for _ in range(num_layers - 1):
-            self.layers.append(mLSTMCell(hidden_size, hidden_size))
+            layers.append(mLSTMCell(hidden_size, hidden_size))
+        self.layers = nn.ModuleList(layers)
 
-    def forward(self, inputs, hidden_state=None):
+    def forward(
+        self, inputs: Tensor, hidden_state: Optional[Tuple[Tensor, Tensor]] = None
+    ):
         size = inputs.size()
         rank = len(size)
         if rank == 2:
@@ -85,7 +96,7 @@ if __name__ == "__main__":
 
     torch.manual_seed(2022)
 
-    mlstm = mLSTM(64, 128, batch_first=True)
+    mlstm = mLSTM(64, 128, 4, True, True)
     inputs = torch.rand(32, 16, 64)
     outputs, (h_t, c_t) = mlstm(inputs)
     print(outputs.shape, h_t.shape, c_t.shape)
