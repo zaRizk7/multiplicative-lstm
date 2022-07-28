@@ -17,6 +17,7 @@ class LSTMCell(nn.Module):
 
     def forward(self, inputs: Tensor, hidden_state: Tuple[Tensor, Tensor]):
         h_t, c_t = hidden_state
+        h_t, c_t = h_t.detach(), c_t.detach()
         h_t = self.linear_hi(inputs) + self.linear_hh(h_t)
         i_t = sigmoid(self.linear_ii(inputs) + self.linear_ih(h_t))
         o_t = sigmoid(self.linear_oi(inputs) + self.linear_oh(h_t))

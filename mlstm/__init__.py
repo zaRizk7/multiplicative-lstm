@@ -1,8 +1,8 @@
 from typing import Optional, Tuple
 
-from torch import Tensor, nn
+from torch import Tensor, cat, nn, stack, zeros
 
-from cell import mLSTMCell
+from .cell import mLSTMCell
 
 
 class mLSTM(nn.Module):
@@ -40,7 +40,10 @@ class mLSTM(nn.Module):
                 hidden_state = (size[0], self.hidden_size)
             else:
                 hidden_state = self.hidden_size
-            hidden_state = [torch.zeros(hidden_state)] * 2
+            hidden_state = (
+                zeros(hidden_state).to(inputs.device),
+                zeros(hidden_state).to(inputs.device),
+            )
 
         h_n, c_n = [], []
         for layer in self.layers:
@@ -49,24 +52,13 @@ class mLSTM(nn.Module):
                 hidden_state = layer(x_t, hidden_state)
                 h_t, c_t = hidden_state
                 outputs.append(h_t)
-            inputs = torch.stack(outputs)
+            inputs = stack(outputs)
             h_n.append(h_t)
             c_n.append(c_t)
-        h_n = torch.stack(h_n)
-        c_n = torch.stack(c_n)
+        h_n = stack(h_n)
+        c_n = stack(c_n)
 
         if self.batch_first and rank == 3:
             inputs = inputs.swapaxes(0, 1)
 
         return inputs, (h_n, c_n)
-
-
-if __name__ == "__main__":
-    import torch
-
-    torch.manual_seed(2022)
-
-    mlstm = mLSTM(64, 128, 4, True, True)
-    inputs = torch.rand(32, 16, 64)
-    outputs, (h_t, c_t) = mlstm(inputs)
-    print(outputs.shape, h_t.shape, c_t.shape)
