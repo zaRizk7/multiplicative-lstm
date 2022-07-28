@@ -1,4 +1,4 @@
-# multiplicative-lstm
+# Multiplicative LSTM
 My implementation for mLSTM using PyTorch
 
 Paper Title : Multiplicative LSTM for Sequence Modelling
