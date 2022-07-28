@@ -1,7 +1,5 @@
-from typing import *
-
 from torch import Tensor, nn, sigmoid, tanh
-from typer import Option
+from typer import Tuple, Optional
 
 
 class LSTMCell(nn.Module):
