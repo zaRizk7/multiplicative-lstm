@@ -30,7 +30,7 @@ class mLSTM(nn.Module):
         rank = len(size)
         if rank == 3 and self.batch_first:
             inputs = inputs.swapaxes(0, 1)
-        elif not rank in [2, 3]:
+        elif 2 < rank > 3:
             raise ValueError(
                 "Tensor must be either 2D (L, H_in) or 3D (L, N, H_in | N, L, H_in)!"
             )
@@ -42,7 +42,7 @@ class mLSTM(nn.Module):
                 hidden_state = self.hidden_size
             hidden_state = [torch.zeros(hidden_state)] * 2
 
-        h, c = [], []
+        h_n, c_n = [], []
         for layer in self.layers:
             outputs = []
             for x_t in inputs:
@@ -50,15 +50,15 @@ class mLSTM(nn.Module):
                 h_t, c_t = hidden_state
                 outputs.append(h_t)
             inputs = torch.stack(outputs)
-            h.append(h_t)
-            c.append(c_t)
-        h = torch.stack(h)
-        c = torch.stack(c)
+            h_n.append(h_t)
+            c_n.append(c_t)
+        h_n = torch.stack(h_n)
+        c_n = torch.stack(c_n)
 
         if self.batch_first and rank == 3:
             inputs = inputs.swapaxes(0, 1)
 
-        return inputs, (h, c)
+        return inputs, (h_n, c_n)
 
 
 if __name__ == "__main__":
@@ -70,4 +70,3 @@ if __name__ == "__main__":
     inputs = torch.rand(32, 16, 64)
     outputs, (h_t, c_t) = mlstm(inputs)
     print(outputs.shape, h_t.shape, c_t.shape)
-    print(outputs, h_t, c_t)
